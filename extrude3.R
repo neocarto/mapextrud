@@ -133,25 +133,18 @@ deform <- function(x, flatten = 0.8, rescale = c(1.3,2)){
   return(x)
 }
   
-  test <- x[1,]
-  test <- st_cast(test,"LINESTRING")
-  
-  View(test)
-  plot(st_geometry(test))
-  test <- st_node(test)
-  
-  
+
 # EXTRUDE
 
-x <- deform(states)
-var = "pop2019"
-k = 0.005
-col = "red"
-add = FALSE
+# x <- deform(states)
+# var = "pop2019"
+# k = 0.008
+# col = "red"
+# add = FALSE
 
-extrude <- function(x, var, k = 0.5, col = "red", add = FALSE) {
+extrude <- function(x, var, k = 0.5, col = "red") {
 
-  x <- st_cast(x, "POLYGON")
+  x <- st_cast(x, "POLYGON", warn = FALSE)
   x$id <- row.names(x)
   x <- x[,c("id",var)]
   v <- x[,var] %>% st_drop_geometry()
@@ -159,235 +152,147 @@ extrude <- function(x, var, k = 0.5, col = "red", add = FALSE) {
 
   # Polygons to dots
     
-  nodes <- st_cast(x,"POINT")
+  nodes <- st_cast(x,"POINT", warn = FALSE)
   #nodes <- nodes[nodes$id %in% c(1:1),] # enlever
   nb <- dim(nodes)[1] - 1
   
-for (i in 1 : nb){
+  
+message("Topology Detection")  
+pct <- 0
+for (i in 1:nb){
+  n <- seq(1, nb, by = round(nb/10,0))
+
+  if (i %in% n) {
+    pct <- pct + 10
+    message(paste0("[",pct,"%]"), appendLF = FALSE)
+    }
+
   id1 <- nodes[i,"id"] %>% st_drop_geometry()
   id2 <- nodes[i+1,"id"] %>% st_drop_geometry()  
   x1 <- st_coordinates(nodes[i,])[1]
   y1 <- st_coordinates(nodes[i,])[2]
   x2 <- st_coordinates(nodes[i+1,])[1]
   y2 <- st_coordinates(nodes[i+1,])[2]
+  pos <- (y1 + y2) / 2
   c <- st_sfc(st_point(c(X = (x1 + x2) / 2, Y = (y1 + y2) / 2)))
   
   if (i == 1){
-  dots <- st_sf(x1 = x1, x2 = x2, y1 = y1, y2 = y2, geometry=c)
+  dots <- st_sf(x1 = x1, x2 = x2, y1 = y1, y2 = y2, pos = pos,  geometry=c)
   } else {
       if (id1 == id2) {
-       dots <- rbind(dots,st_sf(x1 = x1, x2 = x2, y1 = y1, y2 = y2, geometry=c))  
+       dots <- rbind(dots,st_sf(x1 = x1, x2 = x2, y1 = y1, y2 = y2, pos = pos, geometry=c))  
       }
   }
   
 }
+
+
 
   # duplicate suppression
 
   dots$dbl <- duplicated(dots$geometry)
   dots <- dots[!dots$dbl,]  
+
+  # Sort
   
-  # get xxxxxxx
-  
-  # Extrusion 
+  dots <- dots[order(dots[,"pos"] %>% st_drop_geometry() , decreasing = TRUE),]
+
+  # Dots -> faces 
   test <- st_is_within_distance(dots,x,1)
   
-  for (i in 1 : dim(dots)[1]){
+  message("")    
+  message("Extrusion")  
+  
+  pct <- 0
 
+  for (i in 1 : dim(dots)[1]){
+    
+    
+    n <- seq(1, dim(dots)[1], by = round(dim(dots)[1]/10,0))
+    n <- n[1:length(n)-1]
+    
+    if (i %in% n) {
+      pct <- pct + 10
+      message(paste0("[",pct,"%]"), appendLF = FALSE)
+    }
+    
+    
     tmp1 <- as.numeric(x[test[[i]][1],"height"] %>% st_drop_geometry())
     tmp2 <- as.numeric(x[test[[i]][2],"height"] %>% st_drop_geometry())
     height1 <- min(tmp1, tmp2)
     height2 <- max(tmp1, tmp2, na.rm=TRUE)
+    
+    if (tmp1 > tmp2 | is.na(tmp2)){
+      dots$id[i]  <- as.numeric(x[test[[i]][1],"id"])[1]
+    } else {
+      dots$id[i] <- as.numeric(x[test[[i]][2],"id"])[1]
+    }
+    
     if(is.na(height1)){height1 <- 0}
     dot1 <- c(dots$x1[i],dots$y1[i] + height1)
     dot2 <- c(dots$x2[i],dots$y2[i] + height1)
     dot3 <- c(dots$x2[i],dots$y2[i] + height2)
     dot4 <- c(dots$x1[i],dots$y1[i] + height2)
+    dots[i,"ang"] <- atan((dot2[2] - dot1[2]) / ( dot2[1] - dot1[1]))*180/pi
     st_geometry(dots[i,]) <- st_sfc(st_polygon(list(rbind(dot1, dot2, dot3, dot4, dot1))))
   }
-
-  # Tops
-tops <- x
-for (i in 1:dim(tops)[1])
-{
-  st_geometry(tops[i,]) <- st_geometry(tops[i,]) + + c(0, as.numeric(x[i,var])[1] * k)
-}
-
-# Sort
-
-# REPRENDRE ICI : PB DE TRI DES FACES
-
-ids <-tops[order(tops[,var] %>% st_drop_geometry(), decreasing = FALSE),"id"]%>% st_drop_geometry()
-View(tops)
-
-
-
-  plot(st_geometry(x))
-  plot(st_geometry(dots), col="blue", add=T)  
-  for (i in ids){
-    plot(st_geometry(tops[i,]), col = "yellow", add = T)
-    
-  }
   
-# ------------------------------------------------------------------------------------
+  faces <- dots 
   
   
   # colors
   
   if(col == "white"){
-  fill <- c("white","white","white") 
-  border <- c("black","black","black")
+    fill <- c("white","white","white") 
+    border <- c("black","black","black")
   } else {
-  pal <- colorRampPalette(c("white",col,"black"))(11)
-  fill <- c(col, pal[3],pal[7]) 
-  border <- c(pal[9], pal[4],pal[8])
+    pal <- colorRampPalette(c("white",col,"black"))(11)
+    fill <- c(col, pal[3],pal[7]) 
+    border <- c(pal[9], pal[4],pal[8])
   }
   
-  poly <- st_geometry(x)
-
-for (i in 1:nrow(x)){
-
-  i = 1 
   
-  plot(st_geometry(x))
-
-  View(test)
-  
-  View(poly)
-  
-    # Creation of translated polygons (tops)
-  
-    height <-  data.frame(x[i,var])[1]
-    poly <- st_geometry(x)[[i]]
-    poly2 <- poly + c(0, as.numeric(x[i,var])[1] * k)
-    top <- st_sf(x[i,], geometry = st_sfc(poly2))
-    if (i == 1){ tops <- top } else { tops <- rbind(tops,top) }
-
-    # Creation of each faces
-    
-    z = 1
-    pts <- st_coordinates(poly)
-    dot1 <- c(pts[z,"X"], pts[z,"Y"])
-    dot2 <- c(pts[z+1,"X"], pts[z+1,"Y"])
-    center <- st_sfc(st_point(c(X = (dot2[1] + dot1[1])/2, Y = (dot2[2] + dot1[2])/2)))
-    st_is_within_distance(center, x, 1)
-    
-    plot(st_geometry(x))
-    plot(st_geometry(center), col ="red", pch = 20, add=T)
-    class(center)
-    st_centroid(st_point(dot1))
-    pos <- as.numeric((dot1["Y"] +  dot2["Y"]) / 2)
-    po2s <- as.numeric((dot1["X"] +  dot2["X"]) / 2)
-    st_sfc(st_point(c(pos)))
-    st_sfc(st_point(list(rbind(dot1, dot2))))
-    
-    pts2 <- st_coordinates(poly2)
-    nb <- dim(pts)[1] - 1
-    
-    # idx <- unique(pts[, colnames(pts) %in% c("L1", "L2", "L3")])
-      
-      for(z in 1:nb){
-
-      dot1 <- c(pts[z,"X"], pts[z,"Y"])
-      dot2 <- c(pts[z+1,"X"], pts[z+1,"Y"])
-      dot3 <- c(pts2[z+1,"X"], pts2[z+1,"Y"])
-      dot4 <- c(pts2[z,"X"], pts2[z,"Y"])
-      pos <- as.numeric((dot1["Y"] +  dot2["Y"]) / 2)
-      iden <- paste0(round(dot1[1],0),round(dot1[2],0),round(dot2[1],0),round(dot2[2],0))
-      ang <- atan((dot2["Y"] - dot1["Y"]) / ( dot2["X"] - dot1["X"]))*180/pi
-      if (z == 1 & i == 1){
-        faces <- st_sf(id = x$id[i], iden = iden, pos = pos, ang = ang, fill = fill[2], border = border[2], height = height, geometry=st_sfc(st_polygon(list(rbind(dot1, dot2, dot3, dot4, dot1)))))
-      } else {
-        face <- st_sf(id = x$id[i], iden = iden, pos = pos, ang = ang, fill = fill[2], border = border[2], height = height, geometry=st_sfc(st_polygon(list(rbind(dot1, dot2, dot3, dot4, dot1)))))
-        faces <- rbind(faces, face)
-      }
-      }
-    
-    }
-
-  faces <- faces[order(faces$pos, decreasing = TRUE),]
-  faces$fill <- as.character(faces$fill)
-  faces$border <- as.character(faces$border)
+  faces$border <- border[2]
+  faces$fill <- fill[2]
   faces[faces$ang > 0,"fill"] <- fill[3]   
   faces[faces$ang > 0,"border"] <- border[3]   
 
-  # Detect duplicated faces & intersection
-  
-  View(faces)
-  faces$dbl <- duplicated(faces$iden)
-  pos <- faces[faces$dbl == TRUE, "pos"]
-  st_geometry(pos) <- NULL
-  
-  
-  
-  return(list(faces,tops))
-}
-
-
-test <- extrude(x[x$id %in% c("CA","NV","AZ"),], "pop2019", k = 0.01, col ="#f0a800",add=T)
-# test <- extrude(x, "pop2019", k = 0.01, col ="#f0a800",add=T)
-faces <- test[[1]]
-tops <- test[[2]]
-
-faces$dbl <- duplicated(faces$pos)
-pos <- faces[faces$dbl == TRUE, "pos"]
-st_geometry(pos) <- NULL
-
-# Faces interieures
-
-for (i in 1:length(pos[,1])){
-  p = pos[i,1]
-  vars <- faces[faces$pos == p,var]
-  st_geometry(vars) <- NULL
-  x1 <- faces[faces$pos == p & faces$pop2019 == max(vars),]
-  x2 <- faces[faces$pos == p & faces$pop2019 == min(vars),]
-  f <- st_difference(x1,x2)
-  if(i == 1){int <- f} else {int <- rbind(int,f)}
-}
-
-# Faces exterieurs
-
-for (i in 1:nrow(tops)){
-  id = tops[i,"id"]
-  st_geometry(id) <- NULL
-  ok <- faces[faces$id == id$id,]
-  ok <- st_difference(ok,tops[i,])
-  if (i == 1) {
-    ext <- ok
-  } else {
-    ext <- rbind(ext,ok)
+    # Tops
+  tops <- x
+  for (i in 1:dim(tops)[1])
+  {
+    st_geometry(tops[i,]) <- st_geometry(tops[i,]) + + c(0, as.numeric(x[i,var])[1] * k)
   }
+
+# Sort & plot
+  
+  # faces <-  faces[order(faces[,"pos"])]
+  
+  ids <- tops[order(tops[,var] %>% st_drop_geometry(), decreasing = FALSE),"id"] %>% st_drop_geometry()
+  ids <- ids$id
+
+    plot(st_geometry(x), add = FALSE)
+
+
+  for (i in ids){
+    plot(st_geometry(faces[faces$id == i,]), col=faces$fill, border = faces$border, add = TRUE)      
+    plot(st_geometry(tops[i,]), col = fill[1], add = TRUE)
+  }
+  
+  message("")    
+  message("Done")  
+  
+  return(faces)
+
 }
+ 
+x <- deform(states[states$id %in% c("NV"),])
+x <- deform(states)
+plot(getframe(x))
+f <- extrude(x, "pop2019", k = 0.007, col = "#ffc014")
+#plot(st_geometry(x), border="red", add=T)
+plot(st_geometry(f), col="#CCCCCC")
+plot(st_geometry(f[16,]), col="red", add=T)
+View(f)
 
-
-ids <-tops[order(tops$pop2019, decreasing = FALSE),"id"]
-st_geometry(ids) <- NULL
-ids <- ids$id
-
-plot(st_geometry(x[x$id %in% c("CA","NV","AZ"),]))
-
-i = 1
-
-p1_a <- ext[ext$id == ids[i], ]
-p1_b <- int[int$id == ids[i], ]
-p1_c <- tops[tops$id == ids[i],]
-plot(st_geometry(p1_b), col = "green", add=T)
-plot(st_geometry(p1_c), col = "yellow", add=T)
-plot(st_geometry(p1_a), col = "blue", add= T)
-i = 2
-
-p1_a <- ext[ext$id == ids[i], ]
-p1_b <- int[int$id == ids[i], ]
-p1_c <- tops[tops$id == ids[i],]
-plot(st_geometry(p1_b), col = "green", add=T)
-plot(st_geometry(p1_c), col = "yellow", add=T)
-plot(st_geometry(p1_a), col = "blue", add= T)
-
-i = 3
-
-p1_a <- ext[ext$id == ids[i], ]
-p1_b <- int[int$id == ids[i], ]
-p1_c <- tops[tops$id == ids[i],]
-plot(st_geometry(p1_b), col = "green", add=T)
-plot(st_geometry(p1_c), col = "yellow", add=T)
-plot(st_geometry(p1_a), col = "blue", add= T)
+View(faces)
