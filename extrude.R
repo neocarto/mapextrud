@@ -284,7 +284,7 @@ f <- f[order(f$pos, decreasing = TRUE),]
 plot(st_geometry(x), add=add)
 for(i in tops$id)
 {
- plot(st_geometry(f[f$id == i,]), col=f$fill, add=T)
+ plot(st_geometry(f[f$id == i,]), col=f$fill[f$id ==i], add=T)
  plot(st_geometry(tops[tops$id == i,]), col=fill[1], add=T)
 }
 
