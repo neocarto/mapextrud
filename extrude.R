@@ -117,6 +117,12 @@ k = 1
 col = "yellow"
 regular = TRUE
 
+world <- readRDS("world.rds")
+x <- deform(world)
+var = "pop"
+k = 1
+col = "yellow"
+
 extrude <- function(x, var, k = 1, col = "red", regular = FALSE, add = FALSE) {
 
 tmp <- x[is.na(x[,var]),]  
@@ -133,8 +139,10 @@ x[is.na(x[,var]),"height"] <- 0
 n1 <- dim(x)[1]  
 x <- st_cast(x, "POLYGON", warn = FALSE)
 n2 <- dim(x)[1]
-if(n2 > n1){message("Splitting multi-part polygon into single polygons. The same value is assigned to each splitted polygon.")}
-
+if(n2 > n1){
+  message("Splitting multi-part polygon into single polygons. The same value is assigned to each splitted polygon.")
+  x$id <- row.names(x)
+  }
 
 nodes <- st_cast(x,"POINT", warn = FALSE)
 
@@ -197,8 +205,6 @@ st_crs(tops) <- NA
 
 # faces <- st_difference(faces,st_buffer(st_union(st_geometry(tops)),1))
 
-# plot(st_geometry(faces), col="red")
-
 # Opérations géométriques
 
 # 1 - Faces cleaning
@@ -224,11 +230,12 @@ nb <- dim(f2)[1]
 f <- f1
 
 for(i in 1:nb){
+
   if (f1$height[i] == max(f1$heigh[i],f2$heigh[i])){
-    st_geometry(f[i,]) <- st_difference(st_geometry(f1[i,]),st_geometry(f2[i,]) )
+    st_geometry(f[i,]) <- st_difference(st_geometry(f1[i,]),st_buffer(st_geometry(f2[i,]),1) )
     f$id[i] <- f1$id[i]
   } else {
-    st_geometry(f[i,]) <- st_difference(st_geometry(f2[i,]),st_geometry(f1[i,]) )
+    st_geometry(f[i,]) <- st_difference(st_geometry(f2[i,]),st_buffer(st_geometry(f1[i,]),1) )
     f$id[i] <- f2$id[i]
   }
 }
@@ -334,12 +341,13 @@ message("Done")
   
 states <- readRDS("us.rds")
 basemap <- deform(states)
+plot(st_geometry(basemap))
 extrude(basemap, var = "pop2019" , k = 1, col = "red", add = FALSE)
   
 # Example 2
 
 states <- readRDS("us.rds")
-frame <- deform(getframe(x))
+frame <- deform(getframe(states))
 basemap <- deform(states)
 plot(st_geometry(frame))
 extrude(basemap, "pop2019", k = 1, col = "white", add = TRUE)
@@ -360,7 +368,7 @@ basemap <- deform(world)
 frame <- deform(getframe(world))
 plot(st_geometry(frame), col="lightblue")
 plot(st_geometry(basemap), col="white", add=T)
-extrude(basemap, "pop", k = 1, col = "#fca800", add=T)
+extrude(basemap, "pop", k = 1, col = "white", add=T)
 
 # Example 5 (World countries extrud pop Volume)
 
@@ -369,6 +377,15 @@ extrude(basemap, "pop", k = 1, col = "#fca800", add=T)
 
 # Example 5 (Martinique)
 
+
+library(cartography)
+par(mar=c(0,0,0,0))
+mtq <- st_read(system.file("gpkg/mtq.gpkg", package="cartography"))
+par(mfrow=c(2,1))
+basemap <- deform(rotate(mtq,-40))
+extrude(basemap, "POP", k = 1, col = "white")
+basemap <- deform(rotate(mtq,140))
+extrude(basemap, "POP", k = 1, col = "white")
 
 
 # ------------------------------------------------------------------------
