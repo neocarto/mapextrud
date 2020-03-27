@@ -94,40 +94,39 @@ library(scales)
         
         }
   }
-  
+   st_geometry(x) <- st_crop(st_geometry(x), st_bbox(st_union(x)))
     return(x)
-}
+  }
   
-# ----------------------------------------
-states <- readRDS("us.rds")
-x <- deform(states)
-var = "pop2019"
-k = 1
-col = "red"
-#  
+# -------------------------------------------------
+  
+  library(SpatialPosition)
+  data("hospital")
+  pot <- quickStewart(x = hospital,
+                      var = "capacity",
+                      span = 1000,
+                      beta = 2, mask = paris, 
+                      returnclass = "sf")
+  x <- deform(pot)
+  states <- readRDS("us.rds")
+  var = "center"
+  k = 3
+  col = "white"
+  add = F
+  regular = F  
 
-
-world <- readRDS("worldpopgrid.rds")
-View(world)
-x <- world[!is.na(world$pop2020),]
-x <- x[x$pop2020 > median(x$pop2020),]
-View(x)
-var = "pop2020"
-k = 1
-col = "yellow"
-regular = TRUE
-
-world <- readRDS("world.rds")
-x <- deform(world)
-var = "pop"
-k = 1
-col = "yellow"
-
+  
 extrude <- function(x, var, k = 1, col = "red", regular = FALSE, add = FALSE) {
+
+
+xraw <- x  
+x[is.na(x[,var]),var]  <- 0
+x <- x[x[,var] %>% st_drop_geometry() > 0,]
 
 tmp <- x[is.na(x[,var]),]  
 ids <- row.names(tmp)  
 x[rownames(x) %in% ids,var] <- 0
+
 
 h <- st_bbox(x)[4]-st_bbox(x)[2]
 m <- max(x[,var] %>% st_drop_geometry())
@@ -137,7 +136,9 @@ x$id <- row.names(x)
 x[,"height"] <- x[,var] %>% st_drop_geometry() * k
 x[is.na(x[,var]),"height"] <- 0
 n1 <- dim(x)[1]  
-x <- st_cast(x, "POLYGON", warn = FALSE)
+
+x <- st_cast(x, "POLYGON", warn = FALSE) # !!!!!!!!!!!!!!!!!!!!! PB ICI !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 n2 <- dim(x)[1]
 if(n2 > n1){
   message("Splitting multi-part polygon into single polygons. The same value is assigned to each splitted polygon.")
@@ -146,12 +147,34 @@ if(n2 > n1){
 
 nodes <- st_cast(x,"POINT", warn = FALSE)
 
+if(dim(nodes)[1]> 2000 & regular == FALSE){
+    if (interactive()){
+      cat(paste0("Sorry, the script is not optimized...\nThe basemap is not enough generalized (",dim(nodes)[1]," nodes) and the computation will take time.\nDo you still want to continue ? [y/n]"))
+      z <- readLines(con = stdin(), n = 1) 
+      while (!z %in% c("n","y")){
+        cat ("Enter y or n")
+        z <- readLines(con = stdin(), n = 1)  
+      }
+      if (z == "y"){
+        cat("Okay!\nGo get a coffee and come back later to see the result.")
+      } else {
+        stop("Computation aborted",
+             call. = F)
+      }
+    } else {
+      stop("Computation aborted", 
+           call. = F)
+    }
+}
+
+L1 <- data.frame(st_coordinates(x))
+nodes <- st_sf(cbind(data.frame(nodes),L1= L1$L1))
+nodes$id2 <- paste(nodes$id,nodes$L1,sep="_")
+
 # Faces
 
-message("Starting extrusion")
-
-nodes$first <- !duplicated(nodes$id)
-nodes$last <- !duplicated(nodes$id, fromLast = TRUE)
+nodes$first <- !duplicated(nodes$id2)
+nodes$last <- !duplicated(nodes$id2, fromLast = TRUE)
 dots1 <- nodes[!nodes$last,]
 dots2 <- nodes[!nodes$first,]  
 p1x <- st_coordinates(dots1)[,1]
@@ -168,7 +191,6 @@ faces$ang <- atan((p2y - p1y) / ( p2x - p1x))*180/pi
 faces$pos <- (p1y + p2y)/2
 
 st_geometry(faces) <- st_as_sfc(paste0("POLYGON((",p1x," ",p1y,", ",p2x," ",p2y,", ",p3x," ",p3y,", ",p4x," ",p4y,", ",p1x," ",p1y,"))"))
-faces <- faces[order(faces$pos, decreasing = TRUE),]
 
 # Colors
 
@@ -195,7 +217,6 @@ faces[faces$ang > 0,"fill"] <- fill[3]
 # Tops
 
 tops <- x
-
 for (i in 1:dim(tops)[1])
 {
   st_geometry(tops[i,]) <- st_geometry(tops[i,]) + c(0, as.numeric(x[i,var])[1] * k)
@@ -203,146 +224,174 @@ for (i in 1:dim(tops)[1])
 tops <- tops[order(tops$height, decreasing = FALSE),]
 st_crs(tops) <- NA
 
-# faces <- st_difference(faces,st_buffer(st_union(st_geometry(tops)),1))
 
-# Opérations géométriques
-
-# 1 - Faces cleaning
 
 
 if(regular == FALSE){
 
-message("Topological issues (1/3)")
 
-faces$xpos <- round(st_coordinates(st_centroid(st_geometry(faces)))[,1],0)
-faces$dup1 <- as.numeric(duplicated(faces$pos))
-faces$dup2 <- as.numeric(duplicated(faces$pos, fromLast = TRUE))
-faces$dup3 <- as.numeric(duplicated(faces$xpos))
-faces$dup4 <- as.numeric(duplicated(faces$xpos, fromLast = TRUE))
-faces$test1 <- faces$dup1 + faces$dup3
-faces$test2 <- faces$dup2 + faces$dup4
-faces$test3 <- faces$dup1 + faces$dup2 + faces$dup3 + faces$dup4
-f1 <- faces[faces$test1 == 2,]
-f2 <- faces[faces$test2 == 2,]
-f3 <- faces[faces$test3 == 0,]
+message(paste0("Topological detection (",dim(nodes)[1]," nodes)"))
 
-nb <- dim(f2)[1]
-f <- f1
+  
+  lines <- faces
+  st_geometry(lines) <- st_as_sfc(paste0("LINESTRING(",p1x," ",p1y,", ",p2x," ",p2y,")"))
+  nb = dim(lines)[1]
+  
+  span <- round(nb/10,0)
+  init <- span
+  pct <- 10
+  
+  for(i in 1:nb){
+    r <- st_contains(lines[i,], lines)
+    faces$i1[i] <- i
+    if(r[[1]][1] == i){faces$i2[i] <- r[[1]][2]} else {faces$i2[i] <-r[[1]][1] }
+    
+    if(i == span){
+      cat(paste0("[",pct,"%]"))
+      span <- span + init
+      pct <- pct + 10
+    }
+  }
+  cat("[100%]")
+  
+  fext <- faces[is.na(faces$i2),]
+  f <- faces[!is.na(faces$i2),]
 
-for(i in 1:nb){
+message("")
+message("Extrude faces")
+  
+  span <- round(length(f$i1)/10,0)
+  init <- span
+  pct <- 10
+  count <- 1
 
-  if (f1$height[i] == max(f1$heigh[i],f2$heigh[i])){
-    st_geometry(f[i,]) <- st_difference(st_geometry(f1[i,]),st_buffer(st_geometry(f2[i,]),1) )
-    f$id[i] <- f1$id[i]
+  f$none <- 0
+
+  for(i in f$i1){
+    i2 <- f$i2[f$i1 == i]
+    poly1 <- st_geometry(f[f$i1 == i,])
+    poly2 <- st_geometry(f[f$i1 == i2,])
+    height1 <- f$height[f$i1 == i]
+    height2 <- f$height[f$i1 == i2]
+    #if(height2 == 0){poly2 <- st_buffer(poly2,1)}
+    if(height1 > height2){
+      st_geometry(f[f$i1==i,]) <- st_difference(poly1,poly2)
+    } else {
+      f$none[f$i1==i] <- 1
+    }
+    
+    if(count == span){
+      cat(paste0("[",pct,"%]"))
+      span <- span + init
+      pct <- pct + 10
+    }  
+    count <- count +1
+  }
+  cat("[100%]")
+  
+  f <- f[f$none == 0,]
+  f <- f[order(f$pos, decreasing = TRUE),]
+
+  
+  message("")
+  message("Cleaning")
+
+  
+f <- f[,c("id","height","fill","pos")]
+fext <- fext[,c("id","height","fill","pos")]
+f$type <- "inter"
+fext$type <- "ext"
+faces <- rbind(fext,f)
+
+faces <- faces[order(faces$pos,decreasing = TRUE),]  
+
+nb <- dim(faces)[1]
+faces$none <- 0
+faces$i <- 1:nb
+
+span <- round(nb/10,0)
+init <- span
+pct <- 10
+
+for (i in 1:nb){
+  id <- (faces[i,"id"] %>% st_drop_geometry())[,1]
+  poly1 <- st_geometry(faces[i,])
+  poly2 <- st_union(st_geometry(faces[faces$i > i, ])) 
+  poly2 <- st_union(poly2,st_geometry(tops[tops$id==id,]))
+  geom <- st_difference(poly1,st_buffer(poly2,1))
+  if (length(geom) > 0){
+    st_geometry(faces[i,]) <- geom
   } else {
-    st_geometry(f[i,]) <- st_difference(st_geometry(f2[i,]),st_buffer(st_geometry(f1[i,]),1) )
-    f$id[i] <- f2$id[i]
+    faces[i,"none"] <- 1
+  }
+  
+  if(i == span){
+    cat(paste0("[",pct,"%]"))
+    span <- span + init
+    pct <- pct + 10
   }
 }
+cat("[100%]")
+faces <- faces[faces$none == 0,]  
 
-faces <- f
-faces <- faces[order(faces$pos, decreasing = TRUE),]
+# Plot
 
+plot(st_geometry(xraw),col=fill[1], add=add)
 
-# alltops <- st_buffer(st_union(st_geometry(tops)),1)
-# faces <- st_difference(faces,alltops)
-
-
-# 2 -Tops cleaning
-
-message("Topological issues (2/3)")
-
-blocs <- x
-for (i in ids){
-  #st_geometry(blocs[i,]) <- st_buffer(st_union(st_union(st_geometry(faces[faces$id==i,]),st_geometry(tops[tops$id==i,]))),1)
-  st_geometry(blocs[i,]) <- st_buffer(st_union(st_union(st_geometry(faces[faces$id==i,]),st_geometry(tops[tops$id==i,]))),1)
-}
-
-message("Topological issues (3/3)")
-
-for(i in ids){
-  v <- as.numeric(tops[tops$id == i,var] %>% st_drop_geometry())
-  tmp <- tops %>% st_drop_geometry()
-  ids2 <- tmp[tmp[,var] > v & tmp$id != i,"id"]
-  geom1 <- st_geometry(tops[tops$id == i,])
-  # plot(geom1)
-  geom2 <- st_geometry(blocs[blocs$id %in% ids2,])
-  # plot(geom2)
-  geom <- st_difference(geom1, st_union(geom2))
-  
-  if(length(geom) > 0) {
-    st_geometry(tops[tops$id == i,]) <- geom
-  } else {
-    # Supprimer les geometries vides (TODO)
-  }
-  
-  
-}
-
-# 3  - bind & sort faces
-
-# faces2 <- st_difference(f3,st_buffer(st_union(st_geometry(tops)),1))
-f <- rbind(faces, f3)
-f <- f[order(f$pos, decreasing = TRUE),]
-
-
-# Display
-
-plot(st_geometry(x), add=add)
 for(i in tops$id)
 {
-  plot(st_geometry(f[f$id == i,]), col=f$fill[f$id ==i], add=T)
+  plot(st_geometry(faces[faces$id == i,]), col=faces$fill[faces$id ==i], add=T)
   plot(st_geometry(tops[tops$id == i,]), col=fill[1], add=T)
 }
-
-
+message("")
+message("Done")
 } else {
   
  # f <- faces
   
   # Sort
   
-  message("Sort")
+  message("Extrusion et ordering")
   
-  
-  f <- faces[,c("id","pos","fill")]
-  tpos <- min(f$pos) - 1
+
+  faces <- faces[,c("id","pos","fill")]
+  tops$id[1]
+  for (i in tops$id){
+  tops[tops$id == i,"pos"] <- max(faces[faces$id == i,"pos"] %>% st_drop_geometry()) - 1000
+  }  
   tops$fill <- fill[1]
-  t <- tops[,c("id","fill")]
-  t$pos <- tpos
-  geom <- rbind(f, t)
+  tops <- tops[,c("id","pos","fill")]
   
-  xextent <- as.numeric(st_bbox(geom)[3] - st_bbox(geom)[1])
-  sorty <- data.frame(id=x$id,posy = st_coordinates(st_centroid(st_geometry(x)))[,2])
-  sortx <- data.frame(id=x$id,posx = st_coordinates(st_centroid(st_geometry(x)))[,1])
-  if(xextent > 10000) {sorty$posy <- round(sorty$posy,0)}
-  sortx$posx <- 1/sortx$posx
-  geom <- merge(x=geom, y=sortx, by = "id")
-  geom <- merge(x=geom, y=sorty, by = "id")
-  geom <- geom[order(geom$posy, geom$posx, geom$pos, decreasing = TRUE),]
-  
+  geom <- rbind(faces, tops)
+  geom <- geom[order(geom$pos, decreasing = TRUE),]
+
   # Display
 
-  plot(st_geometry(x), add=add)
+  plot(st_geometry(xraw), add=add)
   plot(st_geometry(geom), col=geom$fill, add=T)
 
   }
-
-
-
-message("Done")
-
-
 }
 
 # ------------------------
+
+# Deform
+v1 = 1
+v2 = 1
+v3 = 2.5  
+states <- readRDS("us.rds")
+frame <- getframe(states)
+basemap <- deform(states, flatten = v1, rescale = c(v2,v3))
+frame <- deform(frame, flatten = v1, rescale = c(v2,v3))
+plot(st_geometry(frame))
+plot(st_geometry(basemap), add=T)
+
 
 # Example 1  
   
 states <- readRDS("us.rds")
 basemap <- deform(states)
-plot(st_geometry(basemap))
-extrude(basemap, var = "pop2019" , k = 1, col = "red", add = FALSE)
+extrude(basemap, var = "pop2019" , k = 1, col = "red")
   
 # Example 2
 
@@ -359,34 +408,35 @@ world2 <- deform(world)
 basemap <- world2[!is.na(world$pop2020),]
 basemap <- basemap[basemap$pop2020 > quantile(basemap$pop2020, 0.9),]
 plot(st_geometry(world2),col="#CCCCCC", border="white")
-extrude(basemap, "pop2020", k = 2, col = "red", regular = TRUE, add=T)
+extrude(basemap, "pop2020", k = 10, col = "red", regular = TRUE, add=T)
 
 # Example 4 (World countries extrud pop height)
-
 world <- readRDS("world.rds")
-basemap <- deform(world)
 frame <- deform(getframe(world))
-plot(st_geometry(frame), col="lightblue")
-plot(st_geometry(basemap), col="white", add=T)
-extrude(basemap, "pop", k = 1, col = "white", add=T)
-
-# Example 5 (World countries extrud pop Volume)
-
-# Example 6 (Buffer cenroid)
-
+basemap <- deform(world)
+plot(st_geometry(frame))
+plot(st_geometry(basemap), add=T)
+extrude(basemap, "pop", k = 1.5, col = "white", add=T)
 
 # Example 5 (Martinique)
 
-
 library(cartography)
-par(mar=c(0,0,0,0))
 mtq <- st_read(system.file("gpkg/mtq.gpkg", package="cartography"))
-par(mfrow=c(2,1))
 basemap <- deform(rotate(mtq,-40))
 extrude(basemap, "POP", k = 1, col = "white")
-basemap <- deform(rotate(mtq,140))
-extrude(basemap, "POP", k = 1, col = "white")
 
+# Example 6 (Paris smooth)
+
+library(SpatialPosition)
+data("hospital")
+# Compute potentials
+pot <- quickStewart(x = hospital,
+                    var = "capacity",
+                    span = 1000,
+                    beta = 2, mask = paris, 
+                    returnclass = "sf")
+basemap <- deform(pot)
+extrude(basemap, "center", k = 3, col = "white", regular = FALSE)
 
 # ------------------------------------------------------------------------
  
