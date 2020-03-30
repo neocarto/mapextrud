@@ -99,23 +99,29 @@ library(scales)
   }
   
 # -------------------------------------------------
-  
-  library(SpatialPosition)
-  data("hospital")
-  pot <- quickStewart(x = hospital,
-                      var = "capacity",
-                      span = 1000,
-                      beta = 2, mask = paris, 
-                      returnclass = "sf")
-  x <- deform(pot)
-  states <- readRDS("us.rds")
-  var = "center"
-  k = 3
-  col = "white"
-  add = F
-  regular = F  
 
-  
+  # x <- readRDS("us.rds")
+  #   
+  # library(SpatialPosition)
+  # data("hospital")
+  # hospital
+  # pot <- quickStewart(x = hospital,
+  #                     var = "capacity",
+  #                     span = 2000,
+  #                     beta = 2, mask = paris, 
+  #                     returnclass = "sf")
+  # plot(st_geometry(pot))
+  # 
+  # x <- deform(pot)
+  # var = "center"
+  # k = 3
+  # col = "white"
+  # add = F
+  # regular = F  
+  # 
+  # 
+  # plot(st_geometry(x), col="blue")
+  # 
 extrude <- function(x, var, k = 1, col = "red", regular = FALSE, add = FALSE) {
 
 
@@ -137,7 +143,17 @@ x[,"height"] <- x[,var] %>% st_drop_geometry() * k
 x[is.na(x[,var]),"height"] <- 0
 n1 <- dim(x)[1]  
 
-x <- st_cast(x, "POLYGON", warn = FALSE) # !!!!!!!!!!!!!!!!!!!!! PB ICI !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+# g <- unique(as.character(sf::st_geometry_type(x)))	
+
+single <- x[st_geometry_type(x) == "POLYGON",]
+multi <- x[st_geometry_type(x) == "MULTIPOLYGON",]
+exploded <- st_cast(multi,"POLYGON", warn = FALSE)
+
+x <- rbind(single, exploded)
+
+# x <- st_cast(x, "POLYGON", warn = FALSE)
+
 
 n2 <- dim(x)[1]
 if(n2 > n1){
@@ -145,7 +161,9 @@ if(n2 > n1){
   x$id <- row.names(x)
   }
 
-nodes <- st_cast(x,"POINT", warn = FALSE)
+nodes <- st_cast(x,"MULTIPOINT", warn = FALSE)
+nodes <- st_cast(nodes, "POINT", warn=FALSE)
+
 
 if(dim(nodes)[1]> 2000 & regular == FALSE){
     if (interactive()){
@@ -156,7 +174,7 @@ if(dim(nodes)[1]> 2000 & regular == FALSE){
         z <- readLines(con = stdin(), n = 1)  
       }
       if (z == "y"){
-        cat("Okay!\nGo get a coffee and come back later to see the result.")
+        cat("Okay!\nGo get a coffee and come back later to see the result (or press esc to abort)\n")
       } else {
         stop("Computation aborted",
              call. = F)
@@ -169,6 +187,7 @@ if(dim(nodes)[1]> 2000 & regular == FALSE){
 
 L1 <- data.frame(st_coordinates(x))
 nodes <- st_sf(cbind(data.frame(nodes),L1= L1$L1))
+
 nodes$id2 <- paste(nodes$id,nodes$L1,sep="_")
 
 # Faces
@@ -223,8 +242,6 @@ for (i in 1:dim(tops)[1])
 }
 tops <- tops[order(tops$height, decreasing = FALSE),]
 st_crs(tops) <- NA
-
-
 
 
 if(regular == FALSE){
@@ -423,7 +440,8 @@ extrude(basemap, "pop", k = 1.5, col = "white", add=T)
 library(cartography)
 mtq <- st_read(system.file("gpkg/mtq.gpkg", package="cartography"))
 basemap <- deform(rotate(mtq,-40))
-extrude(basemap, "POP", k = 1, col = "white")
+extrude(basemap, "POP", k = 2, col = "white")
+title("La population en Martinique")
 
 # Example 6 (Paris smooth)
 
@@ -432,11 +450,11 @@ data("hospital")
 # Compute potentials
 pot <- quickStewart(x = hospital,
                     var = "capacity",
-                    span = 1000,
+                    span = 800,
                     beta = 2, mask = paris, 
                     returnclass = "sf")
 basemap <- deform(pot)
-extrude(basemap, "center", k = 3, col = "white", regular = FALSE)
+extrude(basemap, "center", k = 4, col = "white", regular = FALSE)
 
 # ------------------------------------------------------------------------
  
