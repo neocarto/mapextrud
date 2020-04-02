@@ -8,6 +8,7 @@ Authors@R: person(given = "Nicolas",
            comment = c(ORCID = "0000-0003-4976-6560"))
 Description: This package allows to create extruded maps (2.5D) from spatial features (sf). 
 License: GPL-3
+URL: https://github.com/neocarto/mapextrud/
 Encoding: UTF-8
 LazyData: true
 Suggests: 
