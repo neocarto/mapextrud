@@ -1,0 +1,20 @@
+Package: mapextrud
+Title: sf based extruded maps
+Version: 0.0.0.9000
+Authors@R: person(given = "Nicolas",
+           family = "Lambert",
+           role = c("aut", "cre"),
+           email = "nicolas.lambert@cnrs.fr",
+           comment = c(ORCID = "0000-0003-4976-6560"))
+Description: This package allows to create extruded maps (2.5D) from spatial features (sf). 
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
+RoxygenNote: 7.0.2
+Imports: 
+    sf,
+    scales
