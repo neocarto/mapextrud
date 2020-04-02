@@ -59,7 +59,7 @@ dev.off()
 plot(st_geometry(us), col="#99aed1", border = "white", lwd=0.4)
 ```
 
-![[Zoom](../img/map1.png {:target="_blank"})](../img/map1.png){ width=100% }
+![[Zoom](../img/map1.png)](../img/map1.png){ width=100% }
 
 And here, the deformed basemap.
 
@@ -78,7 +78,7 @@ basemap <- deform(us)
 plot(st_geometry(basemap), col="#99aed1", border = "white", lwd=0.4)
 ```
 
-![](../img/map2.png){ width=100% }
+![[Zoom](../img/map2.png)](../img/map2.png){ width=100% }
 
 To better perceive the deformation, you can add a frame with the *getframe()* function
 
@@ -101,7 +101,7 @@ plot(st_geometry(frame), col="#e1e5eb", border = "#99aed1", lwd=0.4)
 plot(st_geometry(basemap), col="#99aed1", border = "white", lwd=0.4, add = TRUE)
 ```
 
-![](../img/map3.png){ width=100% }
+![[Zoom](../img/map3.png)](../img/map3.png){ width=100% }
 
 Notice that you can configure the deformation. The parameter *flatten* indicates the scaling in Y. The parameter *rescale* adjust the deformation of the top and bottom of the figure (c(1,1) = no deformation).
 
@@ -124,7 +124,7 @@ plot(st_geometry(frame), col="#e1e5eb", border = "#99aed1", lwd=0.4)
 plot(st_geometry(basemap), col="#99aed1", border = "white", lwd=0.4, add = TRUE)
 ```
 
-![](../img/map4.png){ width=100% }
+![[Zoom](../img/map4.png)](../img/map4.png){ width=100% }
 
 It can also be useful to rotate the basemap with the *rotate()* function.
 
@@ -149,7 +149,7 @@ plot(st_geometry(frame), col="#e1e5eb", border = "#99aed1", lwd=0.4)
 plot(st_geometry(basemap), col="#99aed1", border = "white", lwd=0.4, add = TRUE)
 ```
 
-![](../img/map5.png){ width=100% }
+![[Zoom](../img/map5.png)](../img/map5.png){ width=100% }
 
 
 ## 3 - Build an extruded map
@@ -174,7 +174,7 @@ basemap <- deform(us)
 extrude(basemap, var = "pop2019")
 ```
 
-![](../img/map6.png){ width=100% }
+![[Zoom](../img/map6.png)](../img/map6.png){ width=100% }
 Of course, you can custom the map by changing colors (*col*) and heights (*k*). On the reprentation below, you will probably notice some imperfections. I hope to be able to fix them in the next version of the package. 
 
 
@@ -193,7 +193,7 @@ basemap <- deform(us)
 extrude(basemap, var = "pop2019", col="#99aed1", k =1.8)
 ```
 
-![](../img/map7.png){ width=100% }
+![[Zoom](../img/map7.png)](../img/map7.png){ width=100% }
 
 ## 4 - Another example with *smoothed* data
 
@@ -237,7 +237,7 @@ choroLayer(x = pot,
              legend.title.txt = "Nb. of Beds")
 ```
 
-![](../img/map8.png){ width=100% }
+![[Zoom](../img/map8.png)](../img/map8.png){ width=100% }
 And here's the same map after extrusion.
 
 ```{r,  eval=TRUE, echo = FALSE, include = FALSE}
@@ -271,7 +271,7 @@ basemap <- deform(pot)
 extrude(basemap, "center", k = 4, col = "white", lwd = 0.7, regular = FALSE)
 ```
 
-![](../img/map9.png){ width=100% }
+![[Zoom](../img/map9.png)](../img/map9.png){ width=100% }
 
 
 Be informed that, instead of defining a single color, you can use a field defining the color of each object. 
@@ -309,7 +309,7 @@ basemap <- deform(pot)
 extrude(basemap, "center", k = 4, col = "colors", lwd = 0.2, regular = FALSE)
 ```
 
-![](../img/map10.png){ width=100% }
+![[Zoom](../img/map10.png)](../img/map10.png){ width=100% }
 
 
 
@@ -393,7 +393,7 @@ extrude(x = basemap, var = "pop2020", k = 4, col = "white", lwd = 0.2, regular =
 
 ```
 
-![](../img/map11.png){ width=100% }
+![[Zoom](../img/map11.png)](../img/map11.png){ width=100% }
 
 As everything is based on *sf*, you can simply combine different layers to finalize the map. Here, we only keep the cells where the population is greater than 5 million people. Thus, 77 % of the world's population is represented on the map.
 
@@ -506,7 +506,7 @@ text(x=  42000000, y = -11500000, "Made with the R package mapextrud", cex = 0.6
 
 ```
 
-![](../img/map12.png){ width=100% }
+![[Zoom](../img/map12.png)](../img/map12.png){ width=100% }
 
 
   
