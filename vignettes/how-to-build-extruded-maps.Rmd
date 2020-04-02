@@ -21,11 +21,12 @@ the *mapextrud* R package allows to make extruded maps from sf objects (polygons
 
 Until a more advanced version is available on CRAN, you can install the package by writing this...
 
-```{r setup}
-# devtools::install_github("neocarto/mapextrud")
+```{r,  eval=FALSE, echo = TRUE}
+library(devtools)
+install_github("neocarto/mapextrud")
 ```
 
-... and loead the package like that. 
+... and load the package like that. 
 
 ```{r eval=TRUE, warning = FALSE, message=FALSE}
 library(mapextrud)
@@ -58,7 +59,7 @@ dev.off()
 plot(st_geometry(us), col="#99aed1", border = "white", lwd=0.4)
 ```
 
-![](../img/map1.png){ width=100% }
+![[Zoom](../img/map1.png {:target="_blank"})](../img/map1.png){ width=100% }
 
 And here, the deformed basemap.
 
