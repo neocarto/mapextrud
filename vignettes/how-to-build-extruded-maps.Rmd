@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 ```
-<p style="color:red">BETA VERSION: this is a work in progress!</p>
+<p style="color:red">WARNING: this is a work in progress!</p>
 
 ## 1 - Principles
 
@@ -445,7 +445,7 @@ plot(st_geometry(world), col = "#e3dbca", border = "#7f8aad", lwd = 0.3, add = T
 extrude(x = basemap, var = "pop2020", k = 5, col = "#e65c5c", lwd = 0.2, regular = TRUE, add = TRUE)
 
 # Layout
-text(x=  -28000000, y =11500000, "2020: A Urban World", cex = 0.9, col = "#5e698a", pos = 4)
+text(x=  -28000000, y =11500000, "An Urban World (population in 2020)", cex = 0.9, col = "#5e698a", pos = 4)
 text(x=  42000000, y = -11500000, "Made with the R package mapextrud", cex = 0.6, col = "#414245", pos = 2)
   
   
@@ -500,7 +500,7 @@ plot(st_geometry(world), col = "#e3dbca", border = "#7f8aad", lwd = 0.3, add = T
 extrude(x = basemap, var = "pop2020", k = 5, col = "#e65c5c", lwd = 0.2, regular = TRUE, add = TRUE)
 
 # Layout
-text(x=  -28000000, y =11500000, "An Urban World (world population in 2020)", cex = 0.9, col = "#5e698a", pos = 4)
+text(x=  -28000000, y =11500000, "An Urban World (population in 2020)", cex = 0.9, col = "#5e698a", pos = 4)
 text(x=  42000000, y = -11500000, "Made with the R package mapextrud", cex = 0.6, col = "#414245", pos = 2)
 
 ```
