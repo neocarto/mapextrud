@@ -151,7 +151,6 @@ plot(st_geometry(basemap), col="#99aed1", border = "white", lwd=0.4, add = TRUE)
 
 ![[Zoom](../img/map5.png)](../img/map5.png){ width=100% }
 
-
 ## 3 - Build an extruded map
 
 Now we're ready to start extruding... To do this, we use the function - unsustainable suspensions - *extrud()*. Beware, this is still an experimental function. It has bugs and works very slowly. Sorry for that!
@@ -175,6 +174,7 @@ extrude(basemap, var = "pop2019")
 ```
 
 ![[Zoom](../img/map6.png)](../img/map6.png){ width=100% }
+
 Of course, you can custom the map by changing colors (*col*) and heights (*k*). On the reprentation below, you will probably notice some imperfections. I hope to be able to fix them in the next version of the package. 
 
 
@@ -238,6 +238,7 @@ choroLayer(x = pot,
 ```
 
 ![[Zoom](../img/map8.png)](../img/map8.png){ width=100% }
+
 And here's the same map after extrusion.
 
 ```{r,  eval=TRUE, echo = FALSE, include = FALSE}
@@ -310,8 +311,6 @@ extrude(basemap, "center", k = 4, col = "colors", lwd = 0.2, regular = FALSE)
 ```
 
 ![[Zoom](../img/map10.png)](../img/map10.png){ width=100% }
-
-
 
 ## 5 - What about regular grids?
 
