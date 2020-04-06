@@ -312,19 +312,52 @@ extrude(basemap, "center", k = 4, col = "colors", lwd = 0.2, regular = FALSE)
 
 ![[Zoom](../img/map10.png)](../img/map10.png){ width=100% }
 
-## 5 - What about regular grids?
+## 5 - Height or Volume?
+
+On extruded maps, representing density is equivalent to varying the volume rather than varying the height. In the example below, we also take care to split the multiparty polygons and assign the population to them in proportion to the surface area. 
+
+```{r,  eval=TRUE, echo = FALSE, include = FALSE}
+if (!file.exists("../img/map11.png")){
+png("../img/map11.png", width = 2070, height = 1400, res = 300)
+par(mar = c(0,0,0,0))
+us <- st_read(system.file("us.gpkg", package="mapextrud"))
+us$area <- st_area(st_geometry(us))
+us2 <- st_cast(us,"POLYGON", warn=FALSE)
+us2$area2 <- st_area(st_geometry(us2))
+us2$pop <-round( us2$pop2019 * as.numeric(us2$area2) / as.numeric(us2$area),0)
+us2$density <- us2$pop / as.numeric(us2$area2) * 1000000
+basemap <- deform(us2)
+extrude(basemap, var = "density" , k = 80, col = "white")
+dev.off()
+}
+```
+
+```{r,  eval=FALSE, echo = TRUE}
+us <- st_read(system.file("us.gpkg", package="mapextrud"))
+us$area <- st_area(st_geometry(us))
+us2 <- st_cast(us,"POLYGON", warn=FALSE)
+us2$area2 <- st_area(st_geometry(us2))
+us2$pop <-round( us2$pop2019 * as.numeric(us2$area2) / as.numeric(us2$area),0)
+us2$density <- us2$pop / as.numeric(us2$area2) * 1000000
+basemap <- deform(us2)
+extrude(basemap, var = "density" , k = 80, col = "white")
+```
+
+![[Zoom](../img/map11.png)](../img/map11.png){ width=100% }
+
+## 6 - What about regular grids?
 
 For regular geometries, you can use the parameter *regular = TRUE* to speed up the calculations. Tip: on irregular basemaps, you can also use this option to test and then remove it to finalize your map. 
 
 Here, an example on world population based on on a sample extracted form gpw-v4 data available [here](https://sedac.ciesin.columbia.edu/data/collection/gpw-v4)
 
 ```{r,  eval=TRUE, echo = FALSE, include = FALSE}
-if (!file.exists("../img/map11.png")){
+if (!file.exists("../img/map12.png")){
 
 library(raster)
 library(rnaturalearth)  
 
-png("../img/map11.png", width = 2070, height = 700, res = 300)
+png("../img/map12.png", width = 2070, height = 700, res = 300)
 par(mar = c(0,0,0,0))
 
 # Map Projection
@@ -392,14 +425,14 @@ extrude(x = basemap, var = "pop2020", k = 4, col = "white", lwd = 0.2, regular =
 
 ```
 
-![[Zoom](../img/map11.png)](../img/map11.png){ width=100% }
+![[Zoom](../img/map12.png)](../img/map11.png){ width=100% }
 
 As everything is based on *sf*, you can simply combine different layers to finalize the map. Here, we only keep the cells where the population is greater than 5 million people. Thus, 77 % of the world's population is represented on the map.
 
 ```{r,  eval=TRUE, echo = FALSE, include = FALSE}
-if (!file.exists("../img/map12.png")){
+if (!file.exists("../img/map13.png")){
   
-png("../img/map12.png", width = 2070, height = 700, res = 300)
+png("../img/map13.png", width = 2070, height = 700, res = 300)
 par(mar = c(0,0,0,0))
   
 library(raster)
@@ -505,7 +538,7 @@ text(x=  42000000, y = -11500000, "Made with the R package mapextrud", cex = 0.6
 
 ```
 
-![[Zoom](../img/map12.png)](../img/map12.png){ width=100% }
+![[Zoom](../img/map13.png)](../img/map12.png){ width=100% }
 
 
   
