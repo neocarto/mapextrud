@@ -319,7 +319,7 @@ WARNING: this is a work in progress!
 <p>We Load an example background map on the US.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">library</span>(sf)</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">us &lt;-<span class="st"> </span><span class="kw">st_read</span>(<span class="kw">system.file</span>(<span class="st">&quot;us.gpkg&quot;</span>, <span class="dt">package=</span><span class="st">&quot;mapextrud&quot;</span>))</a>
-<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="co">#&gt; Reading layer `us' from data source `/home/nlambert/Documents/R/mapextrud/inst/us.gpkg' using driver `GPKG'</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="co">#&gt; Reading layer `us' from data source `/home/nlambert/R/x86_64-pc-linux-gnu-library/3.6/mapextrud/us.gpkg' using driver `GPKG'</span></a>
 <a class="sourceLine" id="cb3-4" data-line-number="4"><span class="co">#&gt; Simple feature collection with 49 features and 3 fields</span></a>
 <a class="sourceLine" id="cb3-5" data-line-number="5"><span class="co">#&gt; geometry type:  MULTIPOLYGON</span></a>
 <a class="sourceLine" id="cb3-6" data-line-number="6"><span class="co">#&gt; dimension:      XY</span></a>
@@ -544,7 +544,7 @@ WARNING: this is a work in progress!
 </div>
 <div id="adding-a-legend" class="section level2">
 <h2>7 - Adding a Legend</h2>
-<p>Finally, the <em>extrudlegend()</em> function allows you to add a legend to your extruded map.</p>
+<p>Finally, the <em>legendextrud()</em> function allows you to add a legend to your extruded map.</p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="kw">library</span>(sf)</a>
 <a class="sourceLine" id="cb17-2" data-line-number="2">us &lt;-<span class="st"> </span><span class="kw">st_read</span>(<span class="kw">system.file</span>(<span class="st">&quot;us.gpkg&quot;</span>, <span class="dt">package=</span><span class="st">&quot;mapextrud&quot;</span>))</a>
 <a class="sourceLine" id="cb17-3" data-line-number="3">basemap &lt;-<span class="st"> </span><span class="kw">deform</span>(us)</a>

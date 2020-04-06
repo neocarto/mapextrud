@@ -542,7 +542,7 @@ text(x=  42000000, y = -11500000, "Made with the R package mapextrud", cex = 0.6
 
 ## 7 - Adding a Legend
 
-Finally, the *extrudlegend()* function allows you to add a legend to your extruded map. 
+Finally, the *legendextrud()* function allows you to add a legend to your extruded map. 
 
 
 ```{r,  eval=TRUE, echo = FALSE, include = FALSE}
