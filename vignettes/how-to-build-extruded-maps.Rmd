@@ -555,7 +555,7 @@ us <- st_read(system.file("us.gpkg", package="mapextrud"))
 basemap <- deform(us)
 extrude(basemap, var = "pop2019" , k = 1, col = "white", lwd = 0.5)
 legendextrud(x = basemap, var = "pop2019", k = 1,
-             title.txt = "Population in 2029", unit = "inh.", 
+             title.txt = "Population in 2019", unit = "inh.", 
              pos = c(-2969082,-791588.8))
 dev.off()
 }
