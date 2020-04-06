@@ -425,7 +425,7 @@ extrude(x = basemap, var = "pop2020", k = 4, col = "white", lwd = 0.2, regular =
 
 ```
 
-![[Zoom](../img/map12.png)](../img/map11.png){ width=100% }
+![[Zoom](../img/map12.png)](../img/map12.png){ width=100% }
 
 As everything is based on *sf*, you can simply combine different layers to finalize the map. Here, we only keep the cells where the population is greater than 5 million people. Thus, 77 % of the world's population is represented on the map.
 
@@ -538,7 +538,7 @@ text(x=  42000000, y = -11500000, "Made with the R package mapextrud", cex = 0.6
 
 ```
 
-![[Zoom](../img/map13.png)](../img/map12.png){ width=100% }
+![[Zoom](../img/map13.png)](../img/map13.png){ width=100% }
 
 
   
