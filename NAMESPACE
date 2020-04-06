@@ -3,4 +3,5 @@
 export(deform)
 export(extrude)
 export(getframe)
+export(legendextrud)
 export(rotate)

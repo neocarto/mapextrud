@@ -540,5 +540,39 @@ text(x=  42000000, y = -11500000, "Made with the R package mapextrud", cex = 0.6
 
 ![[Zoom](../img/map13.png)](../img/map13.png){ width=100% }
 
+## 7 - Adding a Legend
 
-  
+Finally, the *extrudlegend()* function allows you to add a legend to your extruded map. 
+
+
+```{r,  eval=TRUE, echo = FALSE, include = FALSE}
+if (!file.exists("../img/map14.png")){
+
+png("../img/map14.png", width = 2070, height = 900, res = 300)
+par(mar = c(0,0,0,0))
+library(sf)
+us <- st_read(system.file("us.gpkg", package="mapextrud"))
+basemap <- deform(us)
+extrude(basemap, var = "pop2019" , k = 1, col = "white", lwd = 0.5)
+legendextrud(x = basemap, var = "pop2019", k = 1,
+             title.txt = "Population in 2029", unit = "inh.", 
+             pos = c(-2969082,-791588.8))
+dev.off()
+}
+
+```
+
+
+```{r,  eval=FALSE, echo = TRUE}
+library(sf)
+us <- st_read(system.file("us.gpkg", package="mapextrud"))
+basemap <- deform(us)
+extrude(basemap, var = "pop2019" , k = 1, col = "white", lwd = 0.5)
+legendextrud(x = basemap, var = "pop2019", k = 1,
+             title.txt = "Population in 2019", unit = "inh.", 
+             pos = c(-2969082,-791588.8))
+
+```
+
+![[Zoom](../img/map14.png)](../img/map14.png){ width=100% }
+
